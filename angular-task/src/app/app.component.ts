@@ -4,6 +4,12 @@ import { HEADERS, Route, ROUTES } from './data';
 import { ArrowComponent } from './arrow/arrow.component';
 import { CommonModule } from '@angular/common';
 
+interface Header {
+  name: keyof Route;
+  title: string;
+  sortFn: (a: string, b: string) => number;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -12,18 +18,16 @@ import { CommonModule } from '@angular/common';
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
-  headers$ = new BehaviorSubject(
-    HEADERS.map((h) => ({ ...h })) // чтобы иметь возможность менять HEADERS динамически
-  );
+  headers$ = new BehaviorSubject<Header[]>(HEADERS.map((h) => ({ ...h })));
 
   routes$ = new BehaviorSubject<Route[]>([...ROUTES]);
 
   lastFilter$ = new BehaviorSubject<{
-    name: string;
+    name: keyof Route | null;
     direction: 'asc' | 'desc';
     sortFn: (a: string, b: string) => number;
   }>({
-    name: '',
+    name: null,
     direction: 'asc',
     sortFn: () => 0,
   });
@@ -34,14 +38,14 @@ export class AppComponent {
     this.lastFilter$,
   ]).pipe(
     map(([headers, routes, lastFilter]) => {
-      if (!lastFilter.name) return routes; // без сортировки
+      if (!lastFilter.name) return routes;
 
       const headerExists = headers.find((h) => h.name === lastFilter.name);
-      if (!headerExists) return routes; // защита если headers поменялись
+      if (!headerExists) return routes;
 
       return [...routes].sort((a, b) => {
-        const aValue = a[lastFilter.name as keyof Route];
-        const bValue = b[lastFilter.name as keyof Route];
+        const aValue = a[lastFilter.name!];
+        const bValue = b[lastFilter.name!];
         return lastFilter.direction === 'asc'
           ? lastFilter.sortFn(aValue as string, bValue as string)
           : lastFilter.sortFn(bValue as string, aValue as string);
@@ -51,7 +55,7 @@ export class AppComponent {
 
   ngOnInit(): void {}
 
-  onSort(header: { name: string; sortFn: (a: string, b: string) => number }) {
+  onSort(header: Header) {
     const current = this.lastFilter$.getValue();
     const newFilter = {
       name: header.name,
@@ -68,12 +72,16 @@ export class AppComponent {
     this.lastFilter$.next(newFilter);
   }
 
-  getDirection(headerName: string): 'asc' | 'desc' | null {
+  getDirection(headerName: keyof Route): 'asc' | 'desc' | null {
     const current = this.lastFilter$.getValue();
     return current.name === headerName ? current.direction : null;
   }
 
-  updateHeaders(newHeaders: typeof HEADERS) {
+  getRouteValue(route: Route, propertyName: keyof Route): string {
+    return route[propertyName];
+  }
+
+  updateHeaders(newHeaders: Header[]) {
     this.headers$.next(newHeaders.map((h) => ({ ...h })));
   }
 

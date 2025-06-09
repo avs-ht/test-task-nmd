@@ -15,8 +15,10 @@
         <td *ngFor="let header of headers$ | async">
           {{
             header.name === "address"
-              ? route[header.name] + "/" + route["mask"]
-              : route[header.name]
+              ? getRouteValue(route, header.name) +
+                "/" +
+                getRouteValue(route, "mask")
+              : getRouteValue(route, header.name)
           }}
         </td>
       </tr>
