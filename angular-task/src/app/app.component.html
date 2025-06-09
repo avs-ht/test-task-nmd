@@ -1,0 +1,25 @@
+<div class="container">
+  <table class="table">
+    <thead class="tableHeader">
+      <tr class="tableRow">
+        <th *ngFor="let header of headers$ | async" (click)="onSort(header)">
+          <div class="thContent">
+            {{ header.title }}
+            <app-arrow [direction]="getDirection(header.name)"></app-arrow>
+          </div>
+        </th>
+      </tr>
+    </thead>
+    <tbody class="tableBody">
+      <tr *ngFor="let route of sortedRoutes$ | async" class="tableRow">
+        <td *ngFor="let header of headers$ | async">
+          {{
+            header.name === "address"
+              ? route[header.name] + "/" + route["mask"]
+              : route[header.name]
+          }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
